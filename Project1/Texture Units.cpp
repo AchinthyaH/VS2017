@@ -1,12 +1,6 @@
-// Header files
-#include <GL/glew.h>
-#include <SDL.h>
-#include <SDL_opengl.h>
-#include <SOIL.h>
-#include <iostream>
-using namespace std;
 
-#undef main
+#include "Header.h"
+
 
 // Shader sources
 const GLchar* vertexSource = R"glsl(
@@ -36,8 +30,18 @@ const GLchar* fragmentSource = R"glsl(
     }
 )glsl";
 
+SDL_GLContext context;
+SDL_Window* window;
+GLuint vao;
+GLuint vbo;
+GLuint ebo;
+GLuint textures[2];
+GLuint vertexShader;
+GLuint fragmentShader;
+GLuint shaderProgram;
 
-int main(int argc, char *argv[])
+
+void Create_Context()
 {
 
 	// Create Context
@@ -46,28 +50,33 @@ int main(int argc, char *argv[])
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 	SDL_Init(SDL_INIT_VIDEO);
-	SDL_Window* window = SDL_CreateWindow("OpenGL", 100, 100, 800, 600, SDL_WINDOW_OPENGL);
-	SDL_GLContext context = SDL_GL_CreateContext(window);
+	window = SDL_CreateWindow("OpenGL", 100, 100, 800, 600, SDL_WINDOW_OPENGL);
+	context = SDL_GL_CreateContext(window);
+}
 
+void Init_GLEW()
+{
 	// Inititialize GLEW
 	glewExperimental = GL_TRUE;
 	glewInit();
+}
 
+
+void Create_Buffers()
+{
 	// Create Vertex Array Object
-	GLuint vao;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
 
 	// Create a Vertex Buffer Object and copy the vertex data to it
-	GLuint vbo;
 	glGenBuffers(1, &vbo);
 
 	GLfloat vertices[] = {
 		//Position      Color         Texcoords
 		-0.5f,  0.5f,   1.0f, 0.0f,   0.0f, 0.0f, 0.0f, // Top-left
-		 0.5f,  0.5f,   0.0f, 1.0f,   0.0f, 1.0f, 0.0f, // Top-right
-		 0.5f, -0.5f,   0.0f, 0.0f,   1.0f, 1.0f, 1.0f, // Bottom-right
+		0.5f,  0.5f,   0.0f, 1.0f,   0.0f, 1.0f, 0.0f, // Top-right
+		0.5f, -0.5f,   0.0f, 0.0f,   1.0f, 1.0f, 1.0f, // Bottom-right
 		-0.5f, -0.5f,   1.0f, 1.0f,   1.0f, 0.0f, 1.0f  // Bottom-left
 	};
 
@@ -76,7 +85,6 @@ int main(int argc, char *argv[])
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	// Create an element array
-	GLuint ebo;
 	glGenBuffers(1, &ebo);
 
 	GLuint elements[] = {
@@ -87,24 +95,33 @@ int main(int argc, char *argv[])
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
 
+}
+
+void Create_Shaders()
+{
+
 	// Create and compile the vertex shader
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertexShader, 1, &vertexSource, NULL);
 	glCompileShader(vertexShader);
 
 	// Create and compile the fragment shader
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
 	glCompileShader(fragmentShader);
 
 	// Link the vertex and fragment shader into a shader program
-	GLuint shaderProgram = glCreateProgram();
+	shaderProgram = glCreateProgram();
 	glAttachShader(shaderProgram, vertexShader);
 	glAttachShader(shaderProgram, fragmentShader);
 	glBindFragDataLocation(shaderProgram, 0, "outColor");
 	glLinkProgram(shaderProgram);
 	glUseProgram(shaderProgram);
 
+}
+
+void Get_Attributes()
+{
 	//Specify the layout of the vertex data
 	GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
 	glEnableVertexAttribArray(posAttrib);
@@ -118,12 +135,14 @@ int main(int argc, char *argv[])
 	glEnableVertexAttribArray(texAttrib);
 	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
 
-	// Load textures
-	GLuint textures[2];
-	glGenTextures(2, textures);
+}
 
-	int width, height;
+void Load_Textures()
+{
+	// Load textures
+	glGenTextures(2, textures);
 	unsigned char* image;
+	int width, height;
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textures[0]);
@@ -149,28 +168,10 @@ int main(int argc, char *argv[])
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+}
 
-
-	while (true)
-	{
-		SDL_Event windowEvent;
-
-		while (SDL_PollEvent(&windowEvent))
-		{
-			if (windowEvent.type == SDL_QUIT) break;
-		}
-
-		// Clear the screen to black
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		// Draw a rectangle from the 2 triangles using 6 indices
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-		// Swap buffers
-		SDL_GL_SwapWindow(window);
-	}
-
+void Release_Resources()
+{
 	glDeleteTextures(2, textures);
 
 	glDeleteProgram(shaderProgram);
@@ -183,7 +184,5 @@ int main(int argc, char *argv[])
 
 	SDL_GL_DeleteContext(context);
 	SDL_Quit();
-
-	return 0;
 
 }
