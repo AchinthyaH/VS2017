@@ -116,11 +116,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Context.cpp" />
-    <ClCompile Include="Element Buffers.cpp" />
-    <ClCompile Include="Triangle - Change Colour Over Time.cpp" />
-    <ClCompile Include="Triangle - Mixed Colours.cpp" />
-    <ClCompile Include="Triangle.cpp" />
+    <ClCompile Include="Textures.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Header.h" />
