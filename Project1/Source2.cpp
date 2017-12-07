@@ -19,6 +19,7 @@ const GLchar* vertexSource = R"glsl(
         gl_Position = vec4(position, 0.0, 1.0);
     }
 )glsl";
+
 const GLchar* fragmentSource = R"glsl(
     #version 150 core
     in vec3 Color;
