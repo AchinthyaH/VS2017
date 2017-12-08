@@ -19,13 +19,19 @@ int main(int argc, char *argv[])
 			if (windowEvent.type == SDL_QUIT) break;
 		}
 
+		float time = (float)SDL_GetTicks();
 
-		// Clear the screen to black
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glm::mat4 trans;
+		trans = glm::rotate(
+			trans,
+			glm::radians(180.0f),
+			glm::vec3(0.0f, 0.0f, 1.0f)
+		);
+		glUniformMatrix4fv(uniTrans, 1, GL_FALSE, glm::value_ptr(trans));
 
 		// Draw a rectangle from the 2 triangles using 6 indices
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
 
 		// Swap buffers
 		SDL_GL_SwapWindow(window);

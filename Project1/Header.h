@@ -2,6 +2,9 @@
 #include <GL/glew.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <SOIL.h>
 #include <iostream>
 #undef main
@@ -27,3 +30,4 @@ extern GLuint textures[2];
 extern GLuint vertexShader;
 extern GLuint fragmentShader;
 extern GLuint shaderProgram;
+extern GLint uniTrans;
