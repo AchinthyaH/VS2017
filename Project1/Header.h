@@ -16,6 +16,7 @@ void Create_Buffers();
 void Create_Shaders();
 void Get_Attributes();
 void Load_Textures();
+void Transform3D();
 void Release_Resources();
 
 
@@ -30,4 +31,6 @@ extern GLuint textures[2];
 extern GLuint vertexShader;
 extern GLuint fragmentShader;
 extern GLuint shaderProgram;
-extern GLint uniTrans;
+extern GLint uniModel;
+extern GLint uniView;
+extern GLint uniProj;
