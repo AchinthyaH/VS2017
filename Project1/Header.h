@@ -34,3 +34,5 @@ extern GLuint shaderProgram;
 extern GLint uniModel;
 extern GLint uniView;
 extern GLint uniProj;
+extern GLint uniColor;
+extern float x;

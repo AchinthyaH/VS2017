@@ -119,7 +119,7 @@
     <ClInclude Include="Header.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="3Drotation.cpp" />
+    <ClCompile Include="CorrectedCubeReflection.cpp" />
     <ClCompile Include="UtilFunc.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

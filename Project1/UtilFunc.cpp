@@ -4,7 +4,7 @@
 // Shader sources
 const GLchar* vertexSource = R"glsl(
     #version 150 core
-    in vec2 position;
+    in vec3 position;
     in vec3 color;
     in vec2 texcoord;
     out vec3 Color;
@@ -12,11 +12,12 @@ const GLchar* vertexSource = R"glsl(
     uniform mat4 model;
     uniform mat4 view;
     uniform mat4 proj;
+    uniform vec3 overrideColor;
     void main()
     {
-        Color = color;
+        Color = overrideColor * color;
         Texcoord = texcoord;
-        gl_Position = proj * view * model * vec4(position, 0.0, 1.0);
+        gl_Position = proj * view * model * vec4(position, 1.0);
     }
 )glsl";
 const GLchar* fragmentSource = R"glsl(
@@ -28,7 +29,7 @@ const GLchar* fragmentSource = R"glsl(
     uniform sampler2D texPuppy;
     void main()
     {
-        outColor = mix(texture(texKitten, Texcoord), texture(texPuppy, Texcoord), 0.5);
+        outColor = vec4(Color, 1.0) * mix(texture(texKitten, Texcoord), texture(texPuppy, Texcoord), 0.5);
     }
 )glsl";
 
@@ -45,17 +46,20 @@ GLuint shaderProgram;
 GLint uniModel;
 GLint uniView;
 GLint uniProj;
+GLint uniColor;
+float x = 0;
 
 
 void Create_Context()
 {
 
 	// Create Context
+	SDL_Init(SDL_INIT_VIDEO);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-	SDL_Init(SDL_INIT_VIDEO);
+	
 	window = SDL_CreateWindow("OpenGL", 100, 100, 800, 600, SDL_WINDOW_OPENGL);
 	context = SDL_GL_CreateContext(window);
 }
@@ -65,6 +69,8 @@ void Init_GLEW()
 	// Inititialize GLEW
 	glewExperimental = GL_TRUE;
 	glewInit();
+	glEnable(GL_DEPTH_TEST);
+
 }
 
 
@@ -78,28 +84,62 @@ void Create_Buffers()
 	// Create a Vertex Buffer Object and copy the vertex data to it
 	glGenBuffers(1, &vbo);
 
-	GLfloat vertices[] = {
-		//Position      Color         Texcoords
-		-0.5f,  0.5f,   1.0f, 0.0f,   0.0f, 0.0f, 0.0f, // Top-left
-		0.5f,  0.5f,   0.0f, 1.0f,   0.0f, 1.0f, 0.0f, // Top-right
-		0.5f, -0.5f,   0.0f, 0.0f,   1.0f, 1.0f, 1.0f, // Bottom-right
-		-0.5f, -0.5f,   1.0f, 1.0f,   1.0f, 0.0f, 1.0f  // Bottom-left
-	};
 
+	GLfloat vertices[] = {
+		-0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+		0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+		0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+		0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+		0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+		0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+		0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+
+		0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+		0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+		0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+		0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+		0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+		0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+		0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+		0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+		0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+		0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+		0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+		0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+
+		-1.0f, -1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+		1.0f, -1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+		1.0f,  1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+		1.0f,  1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+		-1.0f,  1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+		-1.0f, -1.0f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f
+	};
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	// Create an element array
-	glGenBuffers(1, &ebo);
-
-	GLuint elements[] = {
-		0, 1, 2,
-		2, 3, 0
-	};
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+	
 
 }
 
@@ -128,18 +168,18 @@ void Create_Shaders()
 
 void Get_Attributes()
 {
-	//Specify the layout of the vertex data
 	GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
 	glEnableVertexAttribArray(posAttrib);
-	glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), 0);
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
 
 	GLint colAttrib = glGetAttribLocation(shaderProgram, "color");
 	glEnableVertexAttribArray(colAttrib);
-	glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void*)(2 * sizeof(GLfloat)));
+	glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
 
 	GLint texAttrib = glGetAttribLocation(shaderProgram, "texcoord");
 	glEnableVertexAttribArray(texAttrib);
-	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
+	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
+
 
 }
 
@@ -178,20 +218,23 @@ void Load_Textures()
 
 void Transform3D()
 {
-	GLint uniModel = glGetUniformLocation(shaderProgram, "model");
+	uniModel = glGetUniformLocation(shaderProgram, "model");
 
 	// Set up projection
 	glm::mat4 view = glm::lookAt(
-		glm::vec3(1.2f, 1.2f, 1.2f),
+		glm::vec3(2.5f, 2.5f, 2.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f),
 		glm::vec3(0.0f, 0.0f, 1.0f)
 	);
-	GLint uniView = glGetUniformLocation(shaderProgram, "view");
+	uniView = glGetUniformLocation(shaderProgram, "view");
 	glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
 
 	glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 10.0f);
 	GLint uniProj = glGetUniformLocation(shaderProgram, "proj");
 	glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
+
+	uniColor = glGetUniformLocation(shaderProgram, "overrideColor");
+
 }
 
 void Release_Resources()

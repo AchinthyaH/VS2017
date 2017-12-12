@@ -23,7 +23,7 @@
     <ClCompile Include="UtilFunc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="3Drotation.cpp">
+    <ClCompile Include="CorrectedCubeReflection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
