@@ -20,10 +20,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="UtilFunc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CorrectedCubeReflection.cpp">
+    <ClCompile Include="Framebuffers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
