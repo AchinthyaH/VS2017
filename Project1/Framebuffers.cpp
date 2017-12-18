@@ -238,6 +238,8 @@ void drawCubeScene(const glm::mat4& view, float time)
 	glDisable(GL_STENCIL_TEST);
 }
 
+
+
 int main(int argc, char *argv[])
 {
 
@@ -334,6 +336,10 @@ int main(int argc, char *argv[])
 		panelModel,
 		glm::vec3(0.0f, 0.0f, 2.0f)
 	);
+
+	Camera C(glm::vec3(2.5f, 2.5f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	C.addCamera(glm::vec3(2.65f, 0.465f, 0.25f),glm::vec3(-0.5f, 0.0f, -0.45f),glm::vec3(0.0f, 0.0f, 1.0f));
+
 	glm::mat4 normalAngleView = glm::lookAt(
 		glm::vec3(2.5f, 2.5f, 2.0f),
 		glm::vec3(0.0f, 0.0f, 0.0f),
@@ -351,7 +357,8 @@ int main(int argc, char *argv[])
 	glUniformMatrix4fv(uniPanelModel, 1, GL_FALSE, glm::value_ptr(panelModel));
 
 	GLint uniPanelView = glGetUniformLocation(panelShaderProgram, "view");
-	glUniformMatrix4fv(uniPanelView, 1, GL_FALSE, glm::value_ptr(normalAngleView));
+	C.chooseCam(0);
+	glUniformMatrix4fv(uniPanelView, 1, GL_FALSE, glm::value_ptr(C.getViewMatrix()));
 
 	GLint uniPanelProj = glGetUniformLocation(panelShaderProgram, "proj");
 	glUniformMatrix4fv(uniPanelProj, 1, GL_FALSE, glm::value_ptr(proj));
@@ -392,7 +399,8 @@ int main(int argc, char *argv[])
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texPuppy);
 		x++;
-		drawCubeScene(alternateAngleView, x);
+		C.chooseCam(1);
+		drawCubeScene(C.getViewMatrix(), x);
 
 		// Bind default framebuffer and clear the screen to cornflower blue
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
