@@ -1,8 +1,9 @@
 
 #include "Header.h"
+#include "Classes.h"
 
 // Shader sources
-const GLchar* sceneVertexSource = R"glsl(
+string sceneVertexSource = R"glsl(
     #version 150 core
     in vec3 position;
     in vec3 color;
@@ -20,7 +21,7 @@ const GLchar* sceneVertexSource = R"glsl(
         gl_Position = proj * view * model * vec4(position, 1.0);
     }
 )glsl";
-const GLchar* sceneFragmentSource = R"glsl(
+string sceneFragmentSource = R"glsl(
     #version 150 core
     in vec3 Color;
     in vec2 Texcoord;
@@ -33,7 +34,7 @@ const GLchar* sceneFragmentSource = R"glsl(
     }
 )glsl";
 
-const GLchar* panelVertexSource = R"glsl(
+string panelVertexSource = R"glsl(
     #version 150 core
     in vec2 position;
     in vec2 texcoord;
@@ -47,7 +48,7 @@ const GLchar* panelVertexSource = R"glsl(
         gl_Position = proj * view * model * vec4(position, 0.0, 1.0);
     }
 )glsl";
-const GLchar* panelFragmentSource = R"glsl(
+string panelFragmentSource = R"glsl(
     #version 150 core
     in vec2 Texcoord;
     out vec4 outColor;
@@ -128,6 +129,9 @@ GLint uniSceneModel, uniSceneView, uniColor;
 SDL_GLContext context;
 SDL_Window* window;
 float x = 0;
+
+Shaders S(sceneVertexSource, sceneFragmentSource);
+Camera C(glm::vec3(2.5f, 2.5f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 // Create a texture from an image file
 GLuint loadTexture(const GLchar* path)
@@ -274,32 +278,32 @@ int main(int argc, char *argv[])
 	glBindBuffer(GL_ARRAY_BUFFER, vboPanel);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(panelVertices), panelVertices, GL_STATIC_DRAW);
 
-	// Create shader programs
-	GLuint sceneVertexShader, sceneFragmentShader;
-	createShaderProgram(sceneVertexSource, sceneFragmentSource, sceneVertexShader, sceneFragmentShader, sceneShaderProgram);
+	
+	S.addVertexShader(panelVertexSource);
+	S.addFragmentShader(panelFragmentSource);
 
-	GLuint panelVertexShader, panelFragmentShader, panelShaderProgram;
-	createShaderProgram(panelVertexSource, panelFragmentSource, panelVertexShader, panelFragmentShader, panelShaderProgram);
+	S.createShaderProgram(0, 0);
+	S.createShaderProgram(1,1);
 
 	// Specify the layout of the vertex data
 	glBindVertexArray(vaoCube);
 	glBindBuffer(GL_ARRAY_BUFFER, vboCube);
-	specifySceneVertexAttributes(sceneShaderProgram);
+	specifySceneVertexAttributes(S.getShaderProgram(0));
 
 	glBindVertexArray(vaoPanel);
 	glBindBuffer(GL_ARRAY_BUFFER, vboPanel);
-	specifyPanelVertexAttributes(panelShaderProgram);
-
+	specifyPanelVertexAttributes(S.getShaderProgram(1));
+	
 	// Load textures
 	texKitten = loadTexture("sample.png");
-	texPuppy = loadTexture("sample2.png");
+	texPuppy = loadTexture("sample1.png");
 
-	glUseProgram(sceneShaderProgram);
-	glUniform1i(glGetUniformLocation(sceneShaderProgram, "texKitten"), 0);
-	glUniform1i(glGetUniformLocation(sceneShaderProgram, "texPuppy"), 1);
+	glUseProgram(S.getShaderProgram(0));
+	glUniform1i(glGetUniformLocation(S.getShaderProgram(0), "texKitten"), 0);
+	glUniform1i(glGetUniformLocation(S.getShaderProgram(0), "texPuppy"), 1);
 
-	glUseProgram(panelShaderProgram);
-	glUniform1i(glGetUniformLocation(panelShaderProgram, "texFramebuffer"), 0);
+	glUseProgram(S.getShaderProgram(1));
+	glUniform1i(glGetUniformLocation(S.getShaderProgram(1), "texFramebuffer"), 0);
 
 	// Create framebuffer
 	GLuint frameBuffer;
@@ -337,41 +341,31 @@ int main(int argc, char *argv[])
 		glm::vec3(0.0f, 0.0f, 2.0f)
 	);
 
-	Camera C(glm::vec3(2.5f, 2.5f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	C.addCamera(glm::vec3(2.65f, 0.465f, 0.25f),glm::vec3(-0.5f, 0.0f, -0.45f),glm::vec3(0.0f, 0.0f, 1.0f));
 
-	glm::mat4 normalAngleView = glm::lookAt(
-		glm::vec3(2.5f, 2.5f, 2.0f),
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 1.0f)
-	);
-	glm::mat4 alternateAngleView = glm::lookAt(
-		glm::vec3(2.65f, 0.465f, 0.25f),
-		glm::vec3(-0.5f, 0.0f, -0.45f),
-		glm::vec3(0.0f, 0.0f, 1.0f)
-	);
+	
 	glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 10.0f);
 
 	// Set up panel transformation matrices
-	GLint uniPanelModel = glGetUniformLocation(panelShaderProgram, "model");
+	GLint uniPanelModel = glGetUniformLocation(S.getShaderProgram(1), "model");
 	glUniformMatrix4fv(uniPanelModel, 1, GL_FALSE, glm::value_ptr(panelModel));
 
-	GLint uniPanelView = glGetUniformLocation(panelShaderProgram, "view");
+	GLint uniPanelView = glGetUniformLocation(S.getShaderProgram(1), "view");
 	C.chooseCam(0);
 	glUniformMatrix4fv(uniPanelView, 1, GL_FALSE, glm::value_ptr(C.getViewMatrix()));
 
-	GLint uniPanelProj = glGetUniformLocation(panelShaderProgram, "proj");
+	GLint uniPanelProj = glGetUniformLocation(S.getShaderProgram(1), "proj");
 	glUniformMatrix4fv(uniPanelProj, 1, GL_FALSE, glm::value_ptr(proj));
 
 	// Set up 3D scene transformation matrices
-	glUseProgram(sceneShaderProgram);
+	glUseProgram(S.getShaderProgram(0));
 
-	uniSceneModel = glGetUniformLocation(sceneShaderProgram, "model");
-	uniSceneView = glGetUniformLocation(sceneShaderProgram, "view");
-	GLint uniSceneProj = glGetUniformLocation(sceneShaderProgram, "proj");
+	uniSceneModel = glGetUniformLocation(S.getShaderProgram(0), "model");
+	uniSceneView = glGetUniformLocation(S.getShaderProgram(0), "view");
+	GLint uniSceneProj = glGetUniformLocation(S.getShaderProgram(0), "proj");
 	glUniformMatrix4fv(uniSceneProj, 1, GL_FALSE, glm::value_ptr(proj));
 
-	uniColor = glGetUniformLocation(sceneShaderProgram, "overrideColor");
+	uniColor = glGetUniformLocation(S.getShaderProgram(0), "overrideColor");
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -392,7 +386,7 @@ int main(int argc, char *argv[])
 
 		// Draw 3D scene (spinning cube) from alternate angle
 		glBindVertexArray(vaoCube);
-		glUseProgram(sceneShaderProgram);
+		glUseProgram(S.getShaderProgram(0));
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texKitten);
@@ -409,7 +403,7 @@ int main(int argc, char *argv[])
 
 		// Draw the panel, textured with the contents of our framebuffer 
 		glBindVertexArray(vaoPanel);
-		glUseProgram(panelShaderProgram);
+		glUseProgram(S.getShaderProgram(1));
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texColorBuffer);
@@ -418,14 +412,15 @@ int main(int argc, char *argv[])
 
 		// Draw 3D scene again from normal angle
 		glBindVertexArray(vaoCube);
-		glUseProgram(sceneShaderProgram);
+		glUseProgram(S.getShaderProgram(0));
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texKitten);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texPuppy);
 
-		drawCubeScene(normalAngleView, x);
+		C.chooseCam(0);
+		drawCubeScene(C.getViewMatrix(), x);
 
 
 		// Swap buffers
@@ -438,14 +433,8 @@ int main(int argc, char *argv[])
 
 	glDeleteTextures(1, &texKitten);
 	glDeleteTextures(1, &texPuppy);
-
-	glDeleteProgram(panelShaderProgram);
-	glDeleteShader(panelFragmentShader);
-	glDeleteShader(panelVertexShader);
-
-	glDeleteProgram(sceneShaderProgram);
-	glDeleteShader(sceneFragmentShader);
-	glDeleteShader(sceneVertexShader);
+	
+	S.deleteAll();
 
 	glDeleteBuffers(1, &vboCube);
 	glDeleteBuffers(1, &vboPanel);
