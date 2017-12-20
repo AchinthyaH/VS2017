@@ -23,10 +23,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Framebuffers.cpp">
+    <ClCompile Include="Classes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Classes.cpp">
+    <ClCompile Include="Framebuffers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

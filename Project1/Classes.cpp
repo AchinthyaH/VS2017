@@ -162,18 +162,19 @@ GLuint Shaders::getShaderProgram(unsigned int x)
 //delete specified vertex shader code
 void Shaders::deleteVertexShader(unsigned int x)
 {
-	vertexShader.erase[x];
+	vertexShader.erase(vertexShader.begin() + x);
 }
 
 //delete specified fragment shader code
 void Shaders::deleteFragmentShader(unsigned int x)
 {
-	fragmentShader.erase[x];
+	fragmentShader.erase(fragmentShader.begin() + x);
 }
+
 //delete specified program
 void Shaders::deleteProgram(unsigned int x)
 {
-	finalProgram.erase[x];
+	finalProgram.erase(finalProgram.begin() + x);
 }
 
 //clear all memory

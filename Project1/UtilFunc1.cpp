@@ -1,60 +1,5 @@
 #include "Header.h"
 
-
-// Shader sources
-const GLchar* sceneVertexSource = R"glsl(
-    #version 150 core
-    in vec3 position;
-    in vec3 color;
-    in vec2 texcoord;
-    out vec3 Color;
-    out vec2 Texcoord;
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 proj;
-    uniform vec3 overrideColor;
-    void main()
-    {
-        Color = overrideColor * color;
-        Texcoord = texcoord;
-        gl_Position = proj * view * model * vec4(position, 1.0);
-    }
-)glsl";
-const GLchar* sceneFragmentSource = R"glsl(
-    #version 150 core
-    in vec3 Color;
-    in vec2 Texcoord;
-    out vec4 outColor;
-    uniform sampler2D texKitten;
-    uniform sampler2D texPuppy;
-    void main()
-    {
-        outColor = vec4(Color, 1.0) * mix(texture(texKitten, Texcoord), texture(texPuppy, Texcoord), 0.5);
-    }
-)glsl";
-
-const GLchar* screenVertexSource = R"glsl(
-    #version 150 core
-    in vec2 position;
-    in vec2 texcoord;
-    out vec2 Texcoord;
-    void main()
-    {
-        Texcoord = texcoord;
-        gl_Position = vec4(position, 0.0, 1.0);
-    }
-)glsl";
-const GLchar* screenFragmentSource = R"glsl(
-    #version 150 core
-    in vec2 Texcoord;
-    out vec4 outColor;
-    uniform sampler2D texFramebuffer;
-    void main()
-    {
-        outColor = texture(texFramebuffer, Texcoord);
-    }
-)glsl";
-
 SDL_GLContext context;
 SDL_Window* window;
 GLuint vao;
@@ -94,12 +39,9 @@ void Init_GLEW()
 
 }
 
-
+/*
 void Create_Buffers()
 {
-	
-
-
 	// Cube vertices
 	GLfloat cubeVertices[] = {
 		-0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
@@ -169,30 +111,7 @@ void Create_Buffers()
 
 
 }
-
-void Create_Shaders()
-{
-
-	// Create and compile the vertex shader
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexSource, NULL);
-	glCompileShader(vertexShader);
-
-	// Create and compile the fragment shader
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
-	glCompileShader(fragmentShader);
-
-	// Link the vertex and fragment shader into a shader program
-	shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glBindFragDataLocation(shaderProgram, 0, "outColor");
-	glLinkProgram(shaderProgram);
-	glUseProgram(shaderProgram);
-
-}
-
+*/
 void Get_Attributes()
 {
 	GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
@@ -207,39 +126,6 @@ void Get_Attributes()
 	glEnableVertexAttribArray(texAttrib);
 	glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
 
-
-}
-
-void Load_Textures()
-{
-	glGenTextures(2, textures);
-
-	int width, height;
-	unsigned char* image;
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textures[0]);
-	image = SOIL_load_image("sample.png", &width, &height, 0, SOIL_LOAD_RGB);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-	SOIL_free_image_data(image);
-	glUniform1i(glGetUniformLocation(shaderProgram, "texKitten"), 0);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, textures[1]);
-	image = SOIL_load_image("sample1.png", &width, &height, 0, SOIL_LOAD_RGB);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-	SOIL_free_image_data(image);
-	glUniform1i(glGetUniformLocation(shaderProgram, "texPuppy"), 1);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 }
 
