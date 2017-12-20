@@ -19,7 +19,7 @@ Camera::Camera()
 	c.up.z = 1.0f;
 	c.view = glm::lookAt(c.pos,c.eye,c.up);
 	cameras.push_back(c);
-	active = cameras.size();
+	active = cameras.size() -1;
 }
 
 //constructor with 3 arguments: position, direction and up vector
@@ -33,7 +33,7 @@ Camera::Camera(glm::vec3 pos, glm::vec3 eye, glm::vec3 up)
 	c.up = up;
 	c.view = glm::lookAt(c.pos, c.eye, c.up);
 	cameras.push_back(c);
-	active = cameras.size();
+	active = cameras.size()-1;
 }
 
 //constructor with 5 arguments: position, direction and up vector, with window size parameters
@@ -47,7 +47,7 @@ Camera::Camera(glm::vec3 pos, glm::vec3 eye, glm::vec3 up, GLuint wWidth, GLuint
 	c.up = up;
 	c.view = glm::lookAt(c.pos, c.eye, c.up);
 	cameras.push_back(c);
-	active = cameras.size();
+	active = cameras.size()-1;
 }
 
 //3 parameter function to add a new camera
@@ -61,7 +61,7 @@ void Camera::addCamera(glm::vec3 pos, glm::vec3 eye, glm::vec3 up)
 	c.up = up;
 	c.view = glm::lookAt(c.pos, c.eye, c.up);
 	cameras.push_back(c);
-	active = cameras.size();
+	active = cameras.size()-1;
 }
 
 //5 parameter function to add a new camera
@@ -75,7 +75,7 @@ void Camera::addCamera(glm::vec3 pos, glm::vec3 eye, glm::vec3 up, GLuint wWidth
 	c.up = up;
 	c.view = glm::lookAt(c.pos, c.eye, c.up);
 	cameras.push_back(c);
-	active = cameras.size();
+	active = cameras.size()-1;
 }
 
 //choose which camera is active to perform transforms on it

@@ -8,23 +8,6 @@ struct cam
 
 };
 
-class Shaders
-{
-	vector <string> vertexShader, fragmentShader;
-	vector <GLuint> finalProgram;
-	GLchar* vertexSource, *fragmentSource;
-	GLuint tempVertexShader, tempFragmentShader, tempShaderProgram;
-public:
-	Shaders(string vShader, string fShader);
-	void createShaderProgram(unsigned int i, unsigned int j);
-	void addVertexShader(string vShader);
-	void addFragmentShader(string fShader);
-	GLuint getShaderProgram(unsigned int x);
-	void deleteVertexShader(unsigned int x);
-	void deleteFragmentShader(unsigned int x);
-	void deleteProgram(unsigned int x);
-	void deleteAll();
-};
 
 class Camera
 {
@@ -45,4 +28,22 @@ public:
 	void rotateCam(float angle, glm::vec3 axis);
 	void translateCam(glm::vec3 displacement);
 	glm::mat4 getViewMatrix();
+};
+
+class Shaders
+{
+	vector <string> vertexShader, fragmentShader;
+	vector <GLuint> finalProgram;
+	GLchar* vertexSource, *fragmentSource;
+	GLuint tempVertexShader, tempFragmentShader, tempShaderProgram;
+public:
+	Shaders(string vShader, string fShader);
+	void createShaderProgram(unsigned int i, unsigned int j);
+	void addVertexShader(string vShader);
+	void addFragmentShader(string fShader);
+	GLuint getShaderProgram(unsigned int x);
+	void deleteVertexShader(unsigned int x);
+	void deleteFragmentShader(unsigned int x);
+	void deleteProgram(unsigned int x);
+	void deleteAll();
 };
