@@ -108,6 +108,20 @@ glm::mat4 Camera::getViewMatrix()
 	return cameras[active].view;
 }
 
+glm::vec3 Camera::getPos()
+{
+	return cameras[active].pos;
+}
+
+glm::vec3 Camera::getEye()
+{
+	return cameras[active].eye;
+}
+
+glm::vec3 Camera::getUp()
+{
+	return cameras[active].up;
+}
 //constructor with 2 arguments
 Shaders::Shaders(string vShader, string fShader)
 {

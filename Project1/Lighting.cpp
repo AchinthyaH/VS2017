@@ -7,17 +7,19 @@ string cubeVertexSource = R"glsl(
 	#version 330 core
 	in vec3 aPos;
 	in vec3 aNormal;
-
+	
+	
 	uniform mat4 model;
 	uniform mat4 view;
 	uniform mat4 proj;
+	
 	out vec3 fragPos;  
 	out vec3 Normal;
 		
 	void main()
 	{
 		fragPos = vec3(model * vec4(aPos, 1.0));
-		Normal = aNormal;
+		Normal = mat3(transpose(inverse(model))) * aNormal;
 		gl_Position = proj * view * model * vec4(aPos, 1.0);
 		
 	}
@@ -35,19 +37,25 @@ string cubeFragmentSource = R"glsl(
 	uniform vec3 lightPos;
 	uniform vec3 objectColor;
 	uniform vec3 lightColor;
-	
+	uniform vec3 viewPos;
 
 	void main()
 	{
-		float ambientStrength = 0.3;
+		float ambientStrength = 0.1;
 		vec3 ambient = ambientStrength * lightColor;
 	
 		vec3 norm = normalize(Normal);
 		vec3 lightDir = normalize(lightPos - fragPos);
-		float diff = max(dot(norm, lightDir), 0.0);
+		float diff = max(dot(norm, lightDir),0.0f);
 		vec3 diffuse = diff * lightColor;
-            
-		vec3 result = (ambient + diffuse) * objectColor;
+
+		float specularStrength = 0.8;
+		vec3 viewDir = normalize(viewPos - fragPos);
+		vec3 reflectDir = reflect(lightDir, norm);  
+		float spec = pow(max(dot(viewDir, reflectDir),0), 64);
+		vec3 specular = specularStrength * spec * lightColor;  
+
+		vec3 result = (ambient + diffuse + specular) * objectColor;
 		outColor = vec4(result, 1.0);
 	}
 )glsl";
@@ -130,7 +138,7 @@ SDL_Window* window;
 float x = 0;
 
 Shaders S(cubeVertexSource, cubeFragmentSource);
-Camera C(glm::vec3(3.5f, 3.5f, 3.5f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+Camera C(glm::vec3(3.0f, 3.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 void specifyCubeVertexAttributes(GLuint shaderProgram)
 {
@@ -139,7 +147,7 @@ void specifyCubeVertexAttributes(GLuint shaderProgram)
 	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
 
 	GLint normAttrib = glGetAttribLocation(shaderProgram, "aNormal");
-	glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(normAttrib);
 		
 }
@@ -170,6 +178,7 @@ int main(int argc, char *argv[])
 	// Inititialize GLEW
 	glewExperimental = GL_TRUE;
 	glewInit();
+	glEnable(GL_DEPTH_TEST);
 
 	// Create VAOs
 	glGenVertexArrays(1, &vaoCube);
@@ -184,7 +193,8 @@ int main(int argc, char *argv[])
 
 
 	// lighting
-	glm::vec3 lightPosition(-2.0f, 1.0f , 1.0f);
+	glm::vec3 lightPosition(1.0f, 1.0f, 1.0f); //(-2.0f, 1.0f , 1.0f);
+	glm::vec3 camPosition = C.getPos();
 
 	
 	
@@ -217,7 +227,7 @@ int main(int argc, char *argv[])
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glUseProgram(S.getShaderProgram(0));
-		glBindVertexArray(vaoLight);
+		glBindVertexArray(vaoCube);
 		
 		GLint cubeColor = glGetUniformLocation(S.getShaderProgram(0), "objectColor");
 		glUniform3f(cubeColor, 1.0f, 0.5f, 0.31f);
@@ -225,8 +235,10 @@ int main(int argc, char *argv[])
 		glUniform3f(lightColor, 1.0f, 1.0f, 1.0f);
 		GLint lightPos = glGetUniformLocation(S.getShaderProgram(0), "lightPos");
 		glUniform3fv(lightPos, 1, glm::value_ptr(lightPosition));
+		GLint viewPos = glGetUniformLocation(S.getShaderProgram(0), "viewPos");
+		glUniform3fv(lightPos, 1, glm::value_ptr(camPosition));
 		
-		glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 10.0f);
+		glm::mat4 proj = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 1.0f, 100.0f);
 		uniProj = glGetUniformLocation(S.getShaderProgram(0), "proj");
 		glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
 
@@ -263,6 +275,7 @@ int main(int argc, char *argv[])
 		glm::mat4 modelLight = glm::mat4();
 		modelLight = glm::translate(modelLight, lightPosition);
 		modelLight = glm::scale(modelLight, glm::vec3(0.2f));
+		
 				
 		uniModel = glGetUniformLocation(S.getShaderProgram(1), "model");
 		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(modelLight));

@@ -28,6 +28,9 @@ public:
 	void rotateCam(float angle, glm::vec3 axis);
 	void translateCam(glm::vec3 displacement);
 	glm::mat4 getViewMatrix();
+	glm::vec3 getPos();
+	glm::vec3 getEye();
+	glm::vec3 getUp();
 };
 
 class Shaders
