@@ -2,28 +2,28 @@
 #include "Header.h"
 #include "Classes.h"
 
-// Shader sources
 string cubeVertexSource = R"glsl(
 	#version 330 core
 	in vec3 aPos;
 	in vec3 aNormal;
 	
-	
+	uniform vec3 lightPos;
 	uniform mat4 model;
 	uniform mat4 view;
 	uniform mat4 proj;
 	
 	out vec3 fragPos;  
 	out vec3 Normal;
-		
+	out vec3 LightPos;
+	
 	void main()
 	{
-		fragPos = vec3(model * vec4(aPos, 1.0));
-		Normal = mat3(transpose(inverse(model))) * aNormal;
+		fragPos = vec3(view * model * vec4(aPos, 1.0));
+		Normal = mat3(transpose(inverse(view * model))) * aNormal;
 		gl_Position = proj * view * model * vec4(aPos, 1.0);
+		LightPos = vec3(view * vec4(lightPos, 1.0));
 		
 	}
-
 )glsl";
 
 
@@ -31,32 +31,35 @@ string cubeFragmentSource = R"glsl(
 	#version 330 core
 	
 	in vec3 Normal;
-	out vec4 outColor;
 	in vec3 fragPos;
-  
-	uniform vec3 lightPos;
+	in vec3 LightPos;
+
 	uniform vec3 objectColor;
 	uniform vec3 lightColor;
-	uniform vec3 viewPos;
+
+	out vec4 outColor;
 
 	void main()
 	{
+		// ambient
 		float ambientStrength = 0.1;
-		vec3 ambient = ambientStrength * lightColor;
-	
+		vec3 ambient = ambientStrength * lightColor;    
+    
+		// diffuse 
 		vec3 norm = normalize(Normal);
-		vec3 lightDir = normalize(lightPos - fragPos);
-		float diff = max(dot(norm, lightDir),0.0f);
+		vec3 lightDir = normalize(LightPos - fragPos);
+		float diff = max(dot(norm, lightDir), 0.0);
 		vec3 diffuse = diff * lightColor;
-
-		float specularStrength = 0.8;
-		vec3 viewDir = normalize(viewPos - fragPos);
-		vec3 reflectDir = reflect(lightDir, norm);  
-		float spec = pow(max(dot(viewDir, reflectDir),0), 64);
-		vec3 specular = specularStrength * spec * lightColor;  
-
+    
+		// specular
+		float specularStrength = 0.5;
+		vec3 viewDir = normalize(-fragPos); 
+		vec3 reflectDir = reflect(-lightDir, norm);  
+		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64);
+		vec3 specular = specularStrength * spec * lightColor; 
+    
 		vec3 result = (ambient + diffuse + specular) * objectColor;
-		outColor = vec4(result, 1.0);
+		outColor = vec4(result, 1.0);	
 	}
 )glsl";
 
@@ -138,7 +141,7 @@ SDL_Window* window;
 float x = 0;
 
 Shaders S(cubeVertexSource, cubeFragmentSource);
-Camera C(glm::vec3(3.0f, 3.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+Camera C(glm::vec3(5.0f, 2.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 void specifyCubeVertexAttributes(GLuint shaderProgram)
 {
@@ -193,7 +196,7 @@ int main(int argc, char *argv[])
 
 
 	// lighting
-	glm::vec3 lightPosition(1.0f, 1.0f, 1.0f); //(-2.0f, 1.0f , 1.0f);
+	glm::vec3 lightPosition(2.0f, 1.5f, 0.0f); //(-2.0f, 1.0f , 1.0f);
 	glm::vec3 camPosition = C.getPos();
 
 	
@@ -235,9 +238,7 @@ int main(int argc, char *argv[])
 		glUniform3f(lightColor, 1.0f, 1.0f, 1.0f);
 		GLint lightPos = glGetUniformLocation(S.getShaderProgram(0), "lightPos");
 		glUniform3fv(lightPos, 1, glm::value_ptr(lightPosition));
-		GLint viewPos = glGetUniformLocation(S.getShaderProgram(0), "viewPos");
-		glUniform3fv(lightPos, 1, glm::value_ptr(camPosition));
-		
+			
 		glm::mat4 proj = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 1.0f, 100.0f);
 		uniProj = glGetUniformLocation(S.getShaderProgram(0), "proj");
 		glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
@@ -247,7 +248,7 @@ int main(int argc, char *argv[])
 		uniView = glGetUniformLocation(S.getShaderProgram(0), "view");
 		glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
 
-		x++;
+		x=x+0.25f;
 		glm::mat4 model;
 		model = glm::rotate(
 			model,
