@@ -7,21 +7,19 @@ string cubeVertexSource = R"glsl(
 	in vec3 aPos;
 	in vec3 aNormal;
 	
-	uniform vec3 lightPos;
+
 	uniform mat4 model;
 	uniform mat4 view;
 	uniform mat4 proj;
 	
 	out vec3 fragPos;  
 	out vec3 Normal;
-	out vec3 LightPos;
 	
 	void main()
 	{
 		fragPos = vec3(view * model * vec4(aPos, 1.0));
 		Normal = mat3(transpose(inverse(view * model))) * aNormal;
 		gl_Position = proj * view * model * vec4(aPos, 1.0);
-		LightPos = vec3(view * vec4(lightPos, 1.0));
 		
 	}
 )glsl";
@@ -30,35 +28,47 @@ string cubeVertexSource = R"glsl(
 string cubeFragmentSource = R"glsl(
 	#version 330 core
 	
+	struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;    
+    float shininess;
+	}; 
+	
+	struct Light {
+    vec3 position;
+
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+	};	
+
 	in vec3 Normal;
 	in vec3 fragPos;
-	in vec3 LightPos;
-
-	uniform vec3 objectColor;
-	uniform vec3 lightColor;
-
+	
+	uniform Material material;
+	uniform Light light;
+	
 	out vec4 outColor;
 
 	void main()
 	{
 		// ambient
-		float ambientStrength = 0.1;
-		vec3 ambient = ambientStrength * lightColor;    
+		vec3 ambient = light.ambient * material.ambient;
     
 		// diffuse 
 		vec3 norm = normalize(Normal);
-		vec3 lightDir = normalize(LightPos - fragPos);
+		vec3 lightDir = normalize(light.poition - fragPos);
 		float diff = max(dot(norm, lightDir), 0.0);
-		vec3 diffuse = diff * lightColor;
+		vec3 diffuse = light.diffuse *(diff * material.diffuse);
     
 		// specular
-		float specularStrength = 0.5;
 		vec3 viewDir = normalize(-fragPos); 
 		vec3 reflectDir = reflect(-lightDir, norm);  
-		float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64);
-		vec3 specular = specularStrength * spec * lightColor; 
+		float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+		vec3 specular = light.specular * (spec * material.specular); 
     
-		vec3 result = (ambient + diffuse + specular) * objectColor;
+		vec3 result = ambient + diffuse + specular;
 		outColor = vec4(result, 1.0);	
 	}
 )glsl";
@@ -231,14 +241,34 @@ int main(int argc, char *argv[])
 
 		glUseProgram(S.getShaderProgram(0));
 		glBindVertexArray(vaoCube);
-		
-		GLint cubeColor = glGetUniformLocation(S.getShaderProgram(0), "objectColor");
-		glUniform3f(cubeColor, 1.0f, 0.5f, 0.31f);
-		GLint lightColor = glGetUniformLocation(S.getShaderProgram(0), "lightColor");
-		glUniform3f(lightColor, 1.0f, 1.0f, 1.0f);
+		x = x + 0.25f;
+		glm::vec3 LightColor;
+		LightColor.x = sin(x * 2.0f);
+		LightColor.y = sin(x * 0.7f);
+		LightColor.z = sin(x * 1.3f);
+		glm::vec3 diffuseColor = LightColor   * glm::vec3(0.5f); // decrease the influence
+		glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // low influence
+		glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
+
+		GLint lightAmbient = glGetUniformLocation(S.getShaderProgram(0), "light.ambient");
+		glUniform3fv(lightAmbient, 1, (GLfloat*)glm::value_ptr(ambientColor));
+		GLint lightDiffuse = glGetUniformLocation(S.getShaderProgram(0), "light.diffuse");
+		glUniform3fv(lightAmbient, 1, (GLfloat*)glm::value_ptr(diffuseColor));
+		GLint lightSpecular = glGetUniformLocation(S.getShaderProgram(0), "light.specular");
+		glUniform3fv(lightAmbient, 1, (GLfloat*)glm::value_ptr(specularColor));
 		GLint lightPos = glGetUniformLocation(S.getShaderProgram(0), "lightPos");
 		glUniform3fv(lightPos, 1, glm::value_ptr(lightPosition));
+
 			
+		GLint materialAmbient = glGetUniformLocation(S.getShaderProgram(0), "material.ambient");
+		glUniform3f(materialAmbient, 1.0f, 0.5f, 0.31f);
+		GLint materialDiffuse = glGetUniformLocation(S.getShaderProgram(0), "material.diffuse");
+		glUniform3f(materialDiffuse, 1.0f, 0.5f, 0.31f);
+		GLint materialSpecular = glGetUniformLocation(S.getShaderProgram(0), "material.specular");
+		glUniform3f(materialSpecular, 0.5f, 0.5f, 0.5f);
+		GLint materialShininess = glGetUniformLocation(S.getShaderProgram(0), "material.shininess");
+		glUniform1f(materialSpecular, 64.0f);
+
 		glm::mat4 proj = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 1.0f, 100.0f);
 		uniProj = glGetUniformLocation(S.getShaderProgram(0), "proj");
 		glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
@@ -248,7 +278,7 @@ int main(int argc, char *argv[])
 		uniView = glGetUniformLocation(S.getShaderProgram(0), "view");
 		glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
 
-		x=x+0.25f;
+		
 		glm::mat4 model;
 		model = glm::rotate(
 			model,
@@ -281,7 +311,7 @@ int main(int argc, char *argv[])
 		uniModel = glGetUniformLocation(S.getShaderProgram(1), "model");
 		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(modelLight));
 
-		
+	
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		
 		// Swap buffers
