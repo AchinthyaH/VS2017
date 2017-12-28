@@ -8,6 +8,7 @@
 #include <SOIL.h>
 #include <iostream>
 #include <vector>
+#include <map>
 #undef main
 using namespace std;
 
